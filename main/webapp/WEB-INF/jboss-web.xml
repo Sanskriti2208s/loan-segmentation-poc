@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    WildFly-specific deployment descriptor.
+    Sets the web context root so the app is reachable at:
+    http://localhost:8080/loan-segmentation-poc/
+-->
+<jboss-web xmlns="http://www.jboss.com/xml/ns/javaee"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://www.jboss.com/xml/ns/javaee
+           http://www.jboss.org/j2ee/schema/jboss-web_5_1.xsd">
+
+    <context-root>/loan-segmentation-poc</context-root>
+
+</jboss-web>

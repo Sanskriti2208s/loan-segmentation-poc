@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee
+         http://xmlns.jcp.org/xml/ns/javaee/web-app_4_0.xsd"
+         version="4.0">
+
+    <display-name>Loan Segmentation POC</display-name>
+
+    <!-- ================================================================
+         JSF FacesServlet – maps *.xhtml requests to the JSF runtime
+         provided by WildFly 18 (Mojarra 2.3.x).
+    ================================================================ -->
+    <servlet>
+        <servlet-name>Faces Servlet</servlet-name>
+        <servlet-class>javax.faces.webapp.FacesServlet</servlet-class>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>Faces Servlet</servlet-name>
+        <url-pattern>*.xhtml</url-pattern>
+    </servlet-mapping>
+
+    <!-- Default page -->
+    <welcome-file-list>
+        <welcome-file>index.xhtml</welcome-file>
+    </welcome-file-list>
+
+    <!-- ================================================================
+         PrimeFaces 11 Configuration
+    ================================================================ -->
+    <!-- Built-in PrimeFaces 11 theme (saga = light-blue corporate look) -->
+    <context-param>
+        <param-name>primefaces.THEME</param-name>
+        <param-value>saga</param-value>
+    </context-param>
+
+    <!-- Enable PrimeFaces font-icon library (PrimeIcons) -->
+    <context-param>
+        <param-name>primefaces.FONT_AWESOME</param-name>
+        <param-value>false</param-value>
+    </context-param>
+
+    <!-- ================================================================
+         JSF Configuration
+    ================================================================ -->
+    <!-- Development stage shows detailed error pages; switch to
+         Production before deploying to non-dev environments. -->
+    <context-param>
+        <param-name>javax.faces.PROJECT_STAGE</param-name>
+        <param-value>Development</param-value>
+    </context-param>
+
+    <!-- Honour CDI-managed bean scopes (@ViewScoped etc.) -->
+    <context-param>
+        <param-name>javax.faces.ENABLE_CDI_RESOLVER_CHAIN</param-name>
+        <param-value>true</param-value>
+    </context-param>
+
+    <!-- Suppress the JSF "save state" hidden field in each form -->
+    <context-param>
+        <param-name>javax.faces.STATE_SAVING_METHOD</param-name>
+        <param-value>server</param-value>
+    </context-param>
+
+</web-app>

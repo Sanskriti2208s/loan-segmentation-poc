@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<faces-config version="2.3"
+              xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee
+              http://xmlns.jcp.org/xml/ns/javaee/web-facesconfig_2_3.xsd">
+
+    <!--
+        All managed beans in this POC are CDI beans (@Named + @ViewScoped).
+        No legacy ManagedBean declarations are needed here.
+
+        Navigation rules are intentionally omitted; this is a single-page
+        application using AJAX partial rendering.
+    -->
+
+</faces-config>

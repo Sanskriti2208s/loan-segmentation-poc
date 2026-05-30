@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+
+<h:head>
+    <title>Loan Segmentation – POC</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Custom overrides loaded after PrimeFaces theme -->
+    <h:outputStylesheet library="css" name="styles.css" />
+</h:head>
+
+<h:body styleClass="app-body">
+
+    <h:form id="mainForm">
+
+        <!-- ============================================================
+             GLOBAL GROWL – shows action feedback toasts
+        ============================================================ -->
+        <p:growl id="growl" life="3000" showDetail="true" />
+
+        <!-- ============================================================
+             TOP NAVIGATION BAR
+        ============================================================ -->
+        <div class="app-navbar">
+            <div class="navbar-brand">
+                <!-- PrimeIcons grid icon as brand mark -->
+                <i class="pi pi-th-large brand-icon"></i>
+            </div>
+
+            <nav class="navbar-menu">
+                <!-- Each nav item is a plain button; "Segmentation" is highlighted -->
+                <p:commandButton value="Data Load"
+                                 styleClass="nav-btn"
+                                 type="button" />
+
+                <p:selectOneMenu value="#{segmentationBean.selectedDataset}"
+                                 styleClass="nav-select">
+                    <f:selectItems value="#{segmentationBean.datasets}" />
+                    <p:ajax update="@none" />
+                </p:selectOneMenu>
+
+                <p:commandButton value="History"       styleClass="nav-btn" type="button" />
+                <p:commandButton value="Forecasting"   styleClass="nav-btn" type="button" />
+                <p:commandButton value="Composition"   styleClass="nav-btn" type="button" />
+                <p:commandButton value="Segmentation"  styleClass="nav-btn nav-active" type="button" />
+                <p:commandButton value="Manage Datasets" styleClass="nav-btn" type="button" />
+            </nav>
+        </div>
+
+        <!-- ============================================================
+             MAIN THREE-PANEL LAYOUT
+        ============================================================ -->
+        <div class="main-grid">
+
+            <!-- ========================================================
+                 LEFT PANEL – Add to Selection
+            ======================================================== -->
+            <div class="panel panel-left">
+
+                <div class="panel-header">Add to Selection</div>
+
+                <div class="panel-body">
+
+                    <!-- Fields / Segments sub-view toggle -->
+                    <div class="view-toggle">
+                        <p:commandButton value="Fields"
+                                         styleClass="#{segmentationBean.showFields ? 'toggle-btn toggle-active' : 'toggle-btn'}"
+                                         action="#{segmentationBean.showFieldsView}"
+                                         update="mainForm:growl" />
+                        <p:commandButton value="Segments"
+                                         styleClass="#{not segmentationBean.showFields ? 'toggle-btn toggle-active' : 'toggle-btn'}"
+                                         action="#{segmentationBean.showSegmentsView}"
+                                         update="mainForm:growl" />
+                    </div>
+
+                    <!-- Search box -->
+                    <div class="search-wrapper">
+                        <i class="pi pi-search search-icon"></i>
+                        <p:inputText id="fieldSearch"
+                                     value="#{segmentationBean.fieldSearchTerm}"
+                                     placeholder="Search..."
+                                     styleClass="search-input">
+                            <!-- Re-render field list on every keystroke (300 ms debounce) -->
+                            <p:ajax event="keyup"
+                                    delay="300"
+                                    update="mainForm:fieldListWrapper" />
+                        </p:inputText>
+                    </div>
+
+                    <!-- ── Available fields list ── -->
+                    <p:outputPanel id="fieldListWrapper" layout="block" styleClass="fields-list">
+                        <ui:repeat var="field" value="#{segmentationBean.filteredFields}">
+                            <p:commandLink
+                                    action="#{segmentationBean.addFieldToActiveSegment(field)}"
+                                    update="mainForm:growl mainForm:segmentsWrapper mainForm:fieldListWrapper"
+                                    title="Add #{field.name} to active segment"
+                                    styleClass="field-item #{field.inSegment ? 'field-used' : ''}">
+                                <!-- Tick icon for fields already in a segment -->
+                                <i class="pi #{field.inSegment ? 'pi-check-circle field-check' : 'pi-circle field-dot'}"></i>
+                                <h:outputText value=" #{field.name}" />
+                            </p:commandLink>
+                        </ui:repeat>
+                    </p:outputPanel>
+
+                </div>
+            </div>
+
+            <!-- ========================================================
+                 MIDDLE PANEL – Selected Segments
+            ======================================================== -->
+            <div class="panel panel-middle">
+
+                <!-- Header row with action buttons -->
+                <div class="panel-header segments-header-bar">
+                    <span>Selected Segments</span>
+                    <div class="header-actions">
+                        <p:commandButton icon="pi pi-trash"
+                                         styleClass="p-button-text p-button-danger p-button-sm icon-btn"
+                                         title="Clear all segments"
+                                         action="#{segmentationBean.clearAllSegments}"
+                                         update="mainForm:growl mainForm:segmentsWrapper mainForm:fieldListWrapper" />
+                        <p:commandButton icon="pi pi-copy"
+                                         styleClass="p-button-text p-button-secondary p-button-sm icon-btn"
+                                         title="Duplicate segment group"
+                                         type="button" />
+                        <p:commandButton icon="pi pi-plus"
+                                         styleClass="p-button-sm icon-btn"
+                                         title="Add new segment"
+                                         action="#{segmentationBean.addSegment}"
+                                         update="mainForm:growl mainForm:segmentsWrapper" />
+                    </div>
+                </div>
+
+                <div class="panel-body">
+
+                    <!-- Segment Group selector -->
+                    <p:selectOneMenu value="#{segmentationBean.selectedGroupName}"
+                                     styleClass="full-width">
+                        <f:selectItems value="#{segmentationBean.segmentGroupNames}" />
+                        <p:ajax update="mainForm:segmentsWrapper" />
+                    </p:selectOneMenu>
+
+                    <!-- ── Segments ── -->
+                    <p:outputPanel id="segmentsWrapper" layout="block">
+                        <ui:repeat var="segment"
+                                   value="#{segmentationBean.activeGroup.segments}">
+
+                            <div class="segment-card #{segment == segmentationBean.activeSegment ? 'segment-active' : ''}">
+
+                                <!-- Card header -->
+                                <div class="segment-card-header">
+                                    <span class="segment-title">
+                                        <i class="pi pi-angle-down"></i>
+                                        <h:outputText value=" #{segment.name}" />
+                                    </span>
+                                </div>
+
+                                <!-- Card body – fields -->
+                                <div class="segment-card-body">
+
+                                    <ui:repeat var="segField" value="#{segment.fields}">
+                                        <div class="seg-field-row">
+                                            <span class="seg-field-name">
+                                                <h:outputText value="#{segField.name}" />
+                                            </span>
+                                            <div class="seg-field-actions">
+                                                <!-- Configure (placeholder) -->
+                                                <p:commandButton icon="pi pi-sliders-h"
+                                                                 styleClass="p-button-text p-button-secondary p-button-sm icon-btn"
+                                                                 title="Configure filter"
+                                                                 type="button" />
+                                                <!-- Remove -->
+                                                <p:commandButton icon="pi pi-minus"
+                                                                 styleClass="p-button-text p-button-danger p-button-sm icon-btn"
+                                                                 title="Remove field"
+                                                                 action="#{segmentationBean.removeFieldFromSegment(segment, segField)}"
+                                                                 update="mainForm:growl mainForm:segmentsWrapper mainForm:fieldListWrapper mainForm:reportTable" />
+                                            </div>
+                                        </div>
+                                    </ui:repeat>
+
+                                    <!-- "Add field" hint row -->
+                                    <div class="add-field-hint-row">
+                                        <p:commandButton icon="pi pi-plus"
+                                                         value=" Search for field to add"
+                                                         styleClass="p-button-text p-button-sm add-field-hint-btn"
+                                                         title="Click to make this segment active, then click a field on the left"
+                                                         action="#{segmentationBean.setActiveSegment(segment)}"
+                                                         update="mainForm:growl mainForm:segmentsWrapper" />
+                                    </div>
+
+                                </div>
+                            </div>
+
+                        </ui:repeat>
+
+                        <!-- Empty-state message when group has no segments -->
+                        <p:outputPanel rendered="#{segmentationBean.activeGroup.segments.isEmpty()}"
+                                       layout="block" styleClass="empty-state">
+                            <i class="pi pi-inbox empty-icon"></i>
+                            <p>No segments yet. Click <strong>+</strong> to add one.</p>
+                        </p:outputPanel>
+
+                    </p:outputPanel>
+
+                </div>
+            </div>
+
+            <!-- ========================================================
+                 RIGHT PANEL – Report Preview
+            ======================================================== -->
+            <div class="panel panel-right">
+
+                <!-- Header: title + toggle controls + download -->
+                <div class="panel-header report-header-bar">
+                    <span class="report-title-text">Report Preview</span>
+
+                    <div class="report-controls">
+                        <span class="ctrl-label">Include Empty Segments</span>
+                        <p:toggleSwitch value="#{segmentationBean.includeEmptySegments}">
+                            <p:ajax update="mainForm:reportTable" />
+                        </p:toggleSwitch>
+
+                        <span class="ctrl-label">Auto Refresh</span>
+                        <p:toggleSwitch value="#{segmentationBean.autoRefresh}" />
+
+                        <p:commandButton value="DOWNLOAD"
+                                         icon="pi pi-download"
+                                         styleClass="download-btn"
+                                         action="#{segmentationBean.downloadReport}"
+                                         update="mainForm:growl"
+                                         ajax="true" />
+                    </div>
+                </div>
+
+                <div class="panel-body">
+
+                    <!-- Dataset meta-info row -->
+                    <div class="dataset-info-row">
+                        <div class="info-item">
+                            <label class="info-label">Dataset</label>
+                            <p:selectOneMenu value="#{segmentationBean.selectedDatasetFile}"
+                                             styleClass="dataset-select">
+                                <f:selectItems value="#{segmentationBean.datasetFiles}" />
+                                <p:ajax update="mainForm:reportTable" />
+                            </p:selectOneMenu>
+                        </div>
+                        <div class="info-item">
+                            <label class="info-label">Cut Off Date:</label>
+                            <p:datePicker value="#{segmentationBean.cutOffDate}"
+                                          pattern="dd MMMM yyyy"
+                                          styleClass="cutoff-picker"
+                                          showIcon="true">
+                                <p:ajax update="mainForm:reportTable" />
+                            </p:datePicker>
+                        </div>
+                    </div>
+
+                    <!-- ── Report Data Table ── -->
+                    <p:dataTable id="reportTable"
+                                 var="row"
+                                 value="#{segmentationBean.reportData}"
+                                 styleClass="report-table"
+                                 rowStyleClass="#{row.cssClass}"
+                                 scrollable="true"
+                                 scrollHeight="420"
+                                 emptyMessage="No report data available.">
+
+                        <p:column headerText="Current Interest Ra..."
+                                  styleClass="col-rate">
+                            <!-- Only rendered on INTEREST_GROUP rows -->
+                            <h:outputText value="#{row.interestRateRange}"
+                                          rendered="#{row.interestGroup}" />
+                        </p:column>
+
+                        <p:column headerText="Delinquency Descri..."
+                                  styleClass="col-delinquency">
+                            <h:outputText value="#{row.delinquencyDesc}"
+                                          rendered="#{row.delinquencySubgroup}" />
+                        </p:column>
+
+                        <p:column headerText="Escrow Balance"
+                                  styleClass="col-escrow">
+                            <h:outputText value="#{row.escrowFilter}"
+                                          rendered="#{row.detail}" />
+                        </p:column>
+
+                        <p:column headerText="Active Loan Count"
+                                  styleClass="col-count"
+                                  style="text-align:right;">
+                            <h:outputText value="#{row.activeLoanCount}">
+                                <f:convertNumber groupingUsed="true" type="number" />
+                            </h:outputText>
+                        </p:column>
+
+                        <p:column headerText="Curr UPB"
+                                  styleClass="col-upb"
+                                  style="text-align:right;">
+                            <h:outputText value="#{row.currentUPB}">
+                                <f:convertNumber pattern="#,##0.00" />
+                            </h:outputText>
+                        </p:column>
+
+                    </p:dataTable>
+
+                </div>
+            </div>
+
+        </div><!-- /.main-grid -->
+
+    </h:form>
+
+</h:body>
+</html>
